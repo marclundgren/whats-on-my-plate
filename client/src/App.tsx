@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { TaskProvider, useTasks } from './context/TaskContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { SettingsProvider } from './context/SettingsContext';
 import Header from './components/layout/Header';
 import Sidebar from './components/layout/Sidebar';
 import TaskList from './components/tasks/TaskList';
 import TaskForm from './components/tasks/TaskForm';
 import Toast from './components/ui/Toast';
+import SettingsPage from './components/settings/SettingsPage';
 import { Task, CreateTaskInput, CreateLinkInput } from './types/task.types';
 
 function AppContent() {
@@ -39,6 +41,7 @@ function AppContent() {
 
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Keyboard shortcuts
@@ -114,16 +117,16 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-[var(--color-cream)]">
-      <Header onAddTask={handleAddTask} />
+      <Header onAddTask={handleAddTask} onOpenSettings={() => setShowSettings(true)} showSettings={showSettings} />
 
       <div className="flex">
         <Sidebar
           selectedCategory={selectedCategory}
-          onSelectCategory={setSelectedCategory}
+          onSelectCategory={(cat) => { setSelectedCategory(cat); setShowSettings(false); }}
         />
 
         <main className="flex-1 min-h-[calc(100vh-73px)]">
-          <div className="max-w-3xl mx-auto px-6 lg:px-8 py-8">
+          {showSettings ? <SettingsPage /> : <div className="max-w-3xl mx-auto px-6 lg:px-8 py-8">
             {/* Page Title */}
             <div className="mb-8 flex items-start justify-between">
               <div>
@@ -249,7 +252,7 @@ function AppContent() {
                 onDeleteLink={deleteLink}
               />
             )}
-          </div>
+          </div>}
         </main>
       </div>
 
@@ -280,9 +283,11 @@ function AppContent() {
 function App() {
   return (
     <ThemeProvider>
-      <TaskProvider>
-        <AppContent />
-      </TaskProvider>
+      <SettingsProvider>
+        <TaskProvider>
+          <AppContent />
+        </TaskProvider>
+      </SettingsProvider>
     </ThemeProvider>
   );
 }

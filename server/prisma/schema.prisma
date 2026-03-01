@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Category {
+  WORK
+  PERSONAL
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model Task {
+  id          String      @id @default(uuid())
+  title       String
+  description String?
+  notes       String?     @db.Text
+  category    Category    @default(PERSONAL)
+  priority    Priority    @default(MEDIUM)
+  dueDate     DateTime?
+  completed   Boolean     @default(false)
+  completedAt DateTime?
+  archived    Boolean     @default(false)
+  archivedAt  DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  subtasks    Subtask[]
+  links       Link[]
+
+  @@index([category])
+  @@index([completed])
+  @@index([archived])
+  @@index([dueDate])
+  @@index([priority])
+}
+
+model Subtask {
+  id          String    @id @default(uuid())
+  title       String
+  completed   Boolean   @default(false)
+  completedAt DateTime?
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  taskId      String
+  task        Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@index([completed])
+}
+
+model Link {
+  id        String   @id @default(uuid())
+  url       String
+  title     String?
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([taskId])
+}

@@ -2,12 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { TaskProvider, useTasks } from './context/TaskContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { SettingsProvider } from './context/SettingsContext';
+import { AuthProvider, useAuth, SELF_HOSTED } from './context/AuthContext';
 import Header from './components/layout/Header';
 import Sidebar from './components/layout/Sidebar';
 import TaskList from './components/tasks/TaskList';
 import TaskForm from './components/tasks/TaskForm';
 import Toast from './components/ui/Toast';
 import SettingsPage from './components/settings/SettingsPage';
+import LoginView from './components/auth/LoginView';
 import { Task, CreateTaskInput, CreateLinkInput } from './types/task.types';
 
 function AppContent() {
@@ -280,13 +282,35 @@ function AppContent() {
   );
 }
 
+function AuthGate() {
+  const { user, isLoading } = useAuth();
+
+  if (!SELF_HOSTED && isLoading) {
+    return (
+      <div className="min-h-screen bg-[var(--color-cream)] flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-[var(--color-terracotta)] border-t-transparent animate-spin" />
+      </div>
+    );
+  }
+
+  if (!SELF_HOSTED && !user) {
+    return <LoginView />;
+  }
+
+  return (
+    <TaskProvider>
+      <AppContent />
+    </TaskProvider>
+  );
+}
+
 function App() {
   return (
     <ThemeProvider>
       <SettingsProvider>
-        <TaskProvider>
-          <AppContent />
-        </TaskProvider>
+        <AuthProvider>
+          <AuthGate />
+        </AuthProvider>
       </SettingsProvider>
     </ThemeProvider>
   );

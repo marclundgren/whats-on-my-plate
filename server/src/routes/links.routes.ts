@@ -1,7 +1,10 @@
 import { Router } from 'express';
 import linkController from '../controllers/link.controller';
+import { requireAuth } from '../middleware/auth.middleware';
 
 const router = Router();
+
+router.use(requireAuth);
 
 // POST /api/tasks/:taskId/links - Create link
 router.post('/:taskId/links', linkController.createLink.bind(linkController));

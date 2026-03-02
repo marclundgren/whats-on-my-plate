@@ -19,6 +19,19 @@ enum Priority {
   URGENT
 }
 
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  avatarUrl String?
+  githubId  String?  @unique
+  googleId  String?  @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tasks     Task[]
+}
+
 model Task {
   id          String      @id @default(uuid())
   title       String
@@ -34,9 +47,13 @@ model Task {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
+  userId      String?
+  user        User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   subtasks    Subtask[]
   links       Link[]
 
+  @@index([userId])
   @@index([category])
   @@index([completed])
   @@index([archived])

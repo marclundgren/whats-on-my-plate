@@ -2,6 +2,13 @@ import { Task, CreateTaskInput, UpdateTaskInput, Subtask, CreateSubtaskInput, Li
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
+function authHeaders(extra: Record<string, string> = {}): Record<string, string> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json', ...extra };
+  const token = localStorage.getItem('auth_token');
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return headers;
+}
+
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: 'An error occurred' }));
@@ -35,19 +42,19 @@ export const taskApi = {
     }
 
     const url = `${API_URL}/tasks${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
-    const response = await fetch(url);
+    const response = await fetch(url, { headers: authHeaders() });
     return handleResponse<Task[]>(response);
   },
 
   async getById(id: string): Promise<Task> {
-    const response = await fetch(`${API_URL}/tasks/${id}`);
+    const response = await fetch(`${API_URL}/tasks/${id}`, { headers: authHeaders() });
     return handleResponse<Task>(response);
   },
 
   async create(data: CreateTaskInput): Promise<Task> {
     const response = await fetch(`${API_URL}/tasks`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify(data),
     });
     return handleResponse<Task>(response);
@@ -56,7 +63,7 @@ export const taskApi = {
   async update(id: string, data: UpdateTaskInput): Promise<Task> {
     const response = await fetch(`${API_URL}/tasks/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify(data),
     });
     return handleResponse<Task>(response);
@@ -65,6 +72,7 @@ export const taskApi = {
   async toggleComplete(id: string): Promise<Task> {
     const response = await fetch(`${API_URL}/tasks/${id}/complete`, {
       method: 'PATCH',
+      headers: authHeaders(),
     });
     return handleResponse<Task>(response);
   },
@@ -72,6 +80,7 @@ export const taskApi = {
   async delete(id: string): Promise<void> {
     const response = await fetch(`${API_URL}/tasks/${id}`, {
       method: 'DELETE',
+      headers: authHeaders(),
     });
     return handleResponse<void>(response);
   },
@@ -79,6 +88,7 @@ export const taskApi = {
   async archiveCompleted(): Promise<{ archived: number }> {
     const response = await fetch(`${API_URL}/tasks/archive-completed`, {
       method: 'POST',
+      headers: authHeaders(),
     });
     return handleResponse<{ archived: number }>(response);
   },
@@ -86,6 +96,7 @@ export const taskApi = {
   async unarchive(id: string): Promise<Task> {
     const response = await fetch(`${API_URL}/tasks/${id}/unarchive`, {
       method: 'PATCH',
+      headers: authHeaders(),
     });
     return handleResponse<Task>(response);
   },
@@ -96,7 +107,7 @@ export const subtaskApi = {
   async create(taskId: string, data: CreateSubtaskInput): Promise<Subtask> {
     const response = await fetch(`${API_URL}/tasks/${taskId}/subtasks`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify(data),
     });
     return handleResponse<Subtask>(response);
@@ -105,7 +116,7 @@ export const subtaskApi = {
   async update(taskId: string, subtaskId: string, data: Partial<CreateSubtaskInput>): Promise<Subtask> {
     const response = await fetch(`${API_URL}/tasks/${taskId}/subtasks/${subtaskId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify(data),
     });
     return handleResponse<Subtask>(response);
@@ -114,6 +125,7 @@ export const subtaskApi = {
   async toggleComplete(taskId: string, subtaskId: string): Promise<Subtask> {
     const response = await fetch(`${API_URL}/tasks/${taskId}/subtasks/${subtaskId}/complete`, {
       method: 'PATCH',
+      headers: authHeaders(),
     });
     return handleResponse<Subtask>(response);
   },
@@ -121,6 +133,7 @@ export const subtaskApi = {
   async delete(taskId: string, subtaskId: string): Promise<void> {
     const response = await fetch(`${API_URL}/tasks/${taskId}/subtasks/${subtaskId}`, {
       method: 'DELETE',
+      headers: authHeaders(),
     });
     return handleResponse<void>(response);
   },
@@ -131,7 +144,7 @@ export const linkApi = {
   async create(taskId: string, data: CreateLinkInput): Promise<Link> {
     const response = await fetch(`${API_URL}/tasks/${taskId}/links`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify(data),
     });
     return handleResponse<Link>(response);
@@ -140,7 +153,7 @@ export const linkApi = {
   async update(taskId: string, linkId: string, data: UpdateLinkInput): Promise<Link> {
     const response = await fetch(`${API_URL}/tasks/${taskId}/links/${linkId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify(data),
     });
     return handleResponse<Link>(response);
@@ -149,6 +162,7 @@ export const linkApi = {
   async delete(taskId: string, linkId: string): Promise<void> {
     const response = await fetch(`${API_URL}/tasks/${taskId}/links/${linkId}`, {
       method: 'DELETE',
+      headers: authHeaders(),
     });
     return handleResponse<void>(response);
   },

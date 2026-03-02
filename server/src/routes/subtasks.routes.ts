@@ -1,7 +1,10 @@
 import { Router } from 'express';
 import subtaskController from '../controllers/subtask.controller';
+import { requireAuth } from '../middleware/auth.middleware';
 
 const router = Router();
+
+router.use(requireAuth);
 
 // POST /api/tasks/:taskId/subtasks - Create subtask
 router.post('/:taskId/subtasks', subtaskController.createSubtask.bind(subtaskController));

@@ -1,11 +1,15 @@
-import { PrismaClient, Task, Prisma } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { CreateTaskInput, UpdateTaskInput, TaskQuery } from './validation.service';
 
 const prisma = new PrismaClient();
 
 export class TaskService {
-  async getAllTasks(query: TaskQuery) {
+  async getAllTasks(query: TaskQuery, userId: string | null) {
     const where: Prisma.TaskWhereInput = {};
+
+    if (userId) {
+      where.userId = userId;
+    }
 
     if (query.category) {
       where.category = query.category;
@@ -52,9 +56,14 @@ export class TaskService {
     });
   }
 
-  async getTaskById(id: string) {
-    return await prisma.task.findUnique({
-      where: { id },
+  async getTaskById(id: string, userId: string | null) {
+    const where: Prisma.TaskWhereInput = { id };
+    if (userId) {
+      where.userId = userId;
+    }
+
+    return await prisma.task.findFirst({
+      where,
       include: {
         subtasks: {
           orderBy: { order: 'asc' }
@@ -66,7 +75,7 @@ export class TaskService {
     });
   }
 
-  async createTask(data: CreateTaskInput) {
+  async createTask(data: CreateTaskInput, userId: string | null) {
     const taskData: Prisma.TaskCreateInput = {
       title: data.title,
       description: data.description,
@@ -74,6 +83,7 @@ export class TaskService {
       category: data.category,
       priority: data.priority,
       dueDate: data.dueDate ? new Date(data.dueDate) : null,
+      ...(userId ? { user: { connect: { id: userId } } } : {}),
     };
 
     return await prisma.task.create({
@@ -85,7 +95,16 @@ export class TaskService {
     });
   }
 
-  async updateTask(id: string, data: UpdateTaskInput) {
+  async updateTask(id: string, data: UpdateTaskInput, userId: string | null) {
+    const where: Prisma.TaskWhereInput = { id };
+    if (userId) {
+      where.userId = userId;
+    }
+
+    // Verify task exists and belongs to user
+    const existing = await prisma.task.findFirst({ where, select: { id: true } });
+    if (!existing) return null;
+
     const updateData: Prisma.TaskUpdateInput = {};
 
     if (data.title !== undefined) updateData.title = data.title;
@@ -119,8 +138,13 @@ export class TaskService {
     });
   }
 
-  async toggleTaskCompletion(id: string) {
-    const task = await prisma.task.findUnique({ where: { id } });
+  async toggleTaskCompletion(id: string, userId: string | null) {
+    const where: Prisma.TaskWhereInput = { id };
+    if (userId) {
+      where.userId = userId;
+    }
+
+    const task = await prisma.task.findFirst({ where });
     if (!task) return null;
 
     return await prisma.task.update({
@@ -140,18 +164,26 @@ export class TaskService {
     });
   }
 
-  async deleteTask(id: string) {
-    return await prisma.task.delete({
-      where: { id }
-    });
+  async deleteTask(id: string, userId: string | null) {
+    const where: Prisma.TaskWhereInput = { id };
+    if (userId) {
+      where.userId = userId;
+    }
+
+    const existing = await prisma.task.findFirst({ where, select: { id: true } });
+    if (!existing) return null;
+
+    return await prisma.task.delete({ where: { id } });
   }
 
-  async archiveCompletedTasks() {
+  async archiveCompletedTasks(userId: string | null) {
+    const where: Prisma.TaskWhereInput = { completed: true, archived: false };
+    if (userId) {
+      where.userId = userId;
+    }
+
     return await prisma.task.updateMany({
-      where: {
-        completed: true,
-        archived: false
-      },
+      where,
       data: {
         archived: true,
         archivedAt: new Date()
@@ -159,7 +191,15 @@ export class TaskService {
     });
   }
 
-  async unarchiveTask(id: string) {
+  async unarchiveTask(id: string, userId: string | null) {
+    const where: Prisma.TaskWhereInput = { id };
+    if (userId) {
+      where.userId = userId;
+    }
+
+    const existing = await prisma.task.findFirst({ where, select: { id: true } });
+    if (!existing) return null;
+
     return await prisma.task.update({
       where: { id },
       data: {
@@ -175,6 +215,15 @@ export class TaskService {
         }
       }
     });
+  }
+
+  // Verifies a task exists and belongs to the given user.
+  // Returns true for self-hosted (userId null) to skip the check.
+  async verifyTaskOwnership(taskId: string, userId: string | null): Promise<boolean> {
+    if (userId === null) return true;
+    const task = await prisma.task.findUnique({ where: { id: taskId }, select: { userId: true } });
+    if (!task) return false;
+    return task.userId === userId;
   }
 }
 

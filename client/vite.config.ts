@@ -3,6 +3,8 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
+  // Set at build time via VITE_BASE_PATH env var for GitHub Pages (e.g. /whats-on-my-plate/)
+  base: process.env.VITE_BASE_PATH || '/',
   server: {
     port: 5173,
     strictPort: true,

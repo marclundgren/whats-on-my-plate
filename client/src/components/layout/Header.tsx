@@ -1,5 +1,6 @@
 import React from 'react';
 import ThemeToggle from '../ui/ThemeToggle';
+import { useAuth, SELF_HOSTED } from '../../context/AuthContext';
 
 interface HeaderProps {
   onAddTask: () => void;
@@ -8,6 +9,8 @@ interface HeaderProps {
 }
 
 export default function Header({ onAddTask, onOpenSettings, showSettings }: HeaderProps) {
+  const { user, logout } = useAuth();
+
   return (
     <header className="sticky top-0 z-40 bg-[var(--color-ivory)]/80 backdrop-blur-md border-b border-[var(--color-cream-dark)]">
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-4">
@@ -61,6 +64,32 @@ export default function Header({ onAddTask, onOpenSettings, showSettings }: Head
               </svg>
               <span>New Task</span>
             </button>
+
+            {/* User avatar + logout (hosted mode only) */}
+            {!SELF_HOSTED && user && (
+              <div className="flex items-center gap-2 pl-2 border-l border-[var(--color-cream-dark)]">
+                {user.avatarUrl ? (
+                  <img
+                    src={user.avatarUrl}
+                    alt={user.name || 'User'}
+                    className="w-8 h-8 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-[var(--color-terracotta-light)] flex items-center justify-center text-[var(--color-terracotta)] text-sm font-semibold">
+                    {(user.name || user.email || 'U')[0].toUpperCase()}
+                  </div>
+                )}
+                <button
+                  onClick={logout}
+                  title="Sign out"
+                  className="p-1.5 rounded-lg text-[var(--color-stone)] hover:text-[var(--color-charcoal)] hover:bg-[var(--color-cream-dark)] transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+                  </svg>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -15,7 +15,7 @@ export class TaskController {
         throw new AppError('Invalid query parameters', 400);
       }
 
-      const tasks = await taskService.getAllTasks(queryResult.data);
+      const tasks = await taskService.getAllTasks(queryResult.data, req.userId);
       res.json(tasks);
     } catch (error) {
       next(error);
@@ -24,8 +24,8 @@ export class TaskController {
 
   async getTaskById(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
-      const task = await taskService.getTaskById(id);
+      const id = req.params.id as string;
+      const task = await taskService.getTaskById(id, req.userId);
 
       if (!task) {
         throw new AppError('Task not found', 404);
@@ -44,7 +44,7 @@ export class TaskController {
         throw new AppError(result.error.errors[0].message, 400);
       }
 
-      const task = await taskService.createTask(result.data);
+      const task = await taskService.createTask(result.data, req.userId);
       res.status(201).json(task);
     } catch (error) {
       next(error);
@@ -53,27 +53,26 @@ export class TaskController {
 
   async updateTask(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const result = updateTaskSchema.safeParse(req.body);
       if (!result.success) {
         throw new AppError(result.error.errors[0].message, 400);
       }
 
-      const task = await taskService.updateTask(id, result.data);
+      const task = await taskService.updateTask(id, result.data, req.userId);
+      if (!task) {
+        throw new AppError('Task not found', 404);
+      }
       res.json(task);
     } catch (error) {
-      if ((error as any).code === 'P2025') {
-        next(new AppError('Task not found', 404));
-      } else {
-        next(error);
-      }
+      next(error);
     }
   }
 
   async toggleCompletion(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
-      const task = await taskService.toggleTaskCompletion(id);
+      const id = req.params.id as string;
+      const task = await taskService.toggleTaskCompletion(id, req.userId);
 
       if (!task) {
         throw new AppError('Task not found', 404);
@@ -87,21 +86,20 @@ export class TaskController {
 
   async deleteTask(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
-      await taskService.deleteTask(id);
+      const id = req.params.id as string;
+      const result = await taskService.deleteTask(id, req.userId);
+      if (!result) {
+        throw new AppError('Task not found', 404);
+      }
       res.status(204).send();
     } catch (error) {
-      if ((error as any).code === 'P2025') {
-        next(new AppError('Task not found', 404));
-      } else {
-        next(error);
-      }
+      next(error);
     }
   }
 
   async archiveCompleted(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await taskService.archiveCompletedTasks();
+      const result = await taskService.archiveCompletedTasks(req.userId);
       res.json({ archived: result.count });
     } catch (error) {
       next(error);
@@ -110,15 +108,14 @@ export class TaskController {
 
   async unarchiveTask(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
-      const task = await taskService.unarchiveTask(id);
+      const id = req.params.id as string;
+      const task = await taskService.unarchiveTask(id, req.userId);
+      if (!task) {
+        throw new AppError('Task not found', 404);
+      }
       res.json(task);
     } catch (error) {
-      if ((error as any).code === 'P2025') {
-        next(new AppError('Task not found', 404));
-      } else {
-        next(error);
-      }
+      next(error);
     }
   }
 }

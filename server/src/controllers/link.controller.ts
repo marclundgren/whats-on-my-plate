@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import linkService from '../services/link.service';
+import taskService from '../services/task.service';
 import { AppError } from '../middleware/error.middleware';
 import {
   createLinkSchema,
@@ -9,7 +10,11 @@ import {
 export class LinkController {
   async createLink(req: Request, res: Response, next: NextFunction) {
     try {
-      const { taskId } = req.params;
+      const taskId = req.params.taskId as string;
+      if (!await taskService.verifyTaskOwnership(taskId, req.userId)) {
+        return next(new AppError('Task not found', 404));
+      }
+
       const result = createLinkSchema.safeParse(req.body);
       if (!result.success) {
         throw new AppError(result.error.errors[0].message, 400);
@@ -28,7 +33,12 @@ export class LinkController {
 
   async updateLink(req: Request, res: Response, next: NextFunction) {
     try {
-      const { taskId, linkId } = req.params;
+      const taskId = req.params.taskId as string;
+      const linkId = req.params.linkId as string;
+      if (!await taskService.verifyTaskOwnership(taskId, req.userId)) {
+        return next(new AppError('Task not found', 404));
+      }
+
       const result = updateLinkSchema.safeParse(req.body);
       if (!result.success) {
         throw new AppError(result.error.errors[0].message, 400);
@@ -47,7 +57,12 @@ export class LinkController {
 
   async deleteLink(req: Request, res: Response, next: NextFunction) {
     try {
-      const { taskId, linkId } = req.params;
+      const taskId = req.params.taskId as string;
+      const linkId = req.params.linkId as string;
+      if (!await taskService.verifyTaskOwnership(taskId, req.userId)) {
+        return next(new AppError('Task not found', 404));
+      }
+
       await linkService.deleteLink(taskId, linkId);
       res.status(204).send();
     } catch (error) {

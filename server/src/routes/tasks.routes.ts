@@ -1,7 +1,10 @@
 import { Router } from 'express';
 import taskController from '../controllers/task.controller';
+import { requireAuth } from '../middleware/auth.middleware';
 
 const router = Router();
+
+router.use(requireAuth);
 
 // GET /api/tasks - Get all tasks (with optional filters)
 router.get('/', taskController.getAllTasks.bind(taskController));
